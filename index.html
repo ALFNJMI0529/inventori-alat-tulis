@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <title>Sistem Inventori Alat Tulis</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d6efd">
+  <style>
+    body { background-color: #f8f9fa; padding: 30px; }
+    .card { margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2 class="text-center">Inventori Alat Tulis Pejabat</h2>
+
+    <div class="card">
+      <div class="card-body">
+        <h5>Tambah Item Stok</h5>
+        <div class="row g-2">
+          <div class="col-md-4">
+            <input type="text" id="itemName" class="form-control" placeholder="Nama Alat Tulis">
+          </div>
+          <div class="col-md-3">
+            <input type="number" id="itemQty" class="form-control" placeholder="Kuantiti">
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-success w-100" onclick="addItem()">Tambah</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h5>Senarai Stok Semasa</h5>
+        <table class="table table-bordered">
+          <thead class="table-light">
+            <tr>
+              <th>Nama Item</th>
+              <th>Kuantiti</th>
+              <th>Tindakan</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let inventory = JSON.parse(localStorage.getItem("inventory")) || [];
+
+    function saveInventory() {
+      localStorage.setItem("inventory", JSON.stringify(inventory));
+      loadInventory();
+    }
+
+    function addItem() {
+      const name = document.getElementById("itemName").value.trim();
+      const qty = parseInt(document.getElementById("itemQty").value);
+      if (!name || isNaN(qty)) return alert("Sila isi semua maklumat.");
+      const index = inventory.findIndex(item => item.name === name);
+      if (index > -1) {
+        inventory[index].qty += qty;
+      } else {
+        inventory.push({ name, qty });
+      }
+      document.getElementById("itemName").value = "";
+      document.getElementById("itemQty").value = "";
+      saveInventory();
+    }
+
+    function changeQty(index, delta) {
+      inventory[index].qty += delta;
+      if (inventory[index].qty < 0) inventory[index].qty = 0;
+      saveInventory();
+    }
+
+    function deleteItem(index) {
+      if (confirm("Anda pasti ingin padam item ini?")) {
+        inventory.splice(index, 1);
+        saveInventory();
+      }
+    }
+
+    function loadInventory() {
+      const table = document.getElementById("inventoryTable");
+      table.innerHTML = "";
+      inventory.forEach((item, index) => {
+        table.innerHTML += `
+          <tr>
+            <td>${item.name}</td>
+            <td>${item.qty}</td>
+            <td>
+              <button class="btn btn-sm btn-primary me-1" onclick="changeQty(${index}, 1)">+1</button>
+              <button class="btn btn-sm btn-danger me-1" onclick="changeQty(${index}, -1)">-1</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${index})">🗑️ Padam</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    loadInventory();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log("Service Worker didaftarkan", reg))
+        .catch(err => console.error("Service Worker gagal", err));
+    }
+  </script>
+</body>
+</html>
